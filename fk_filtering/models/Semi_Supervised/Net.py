@@ -174,7 +174,7 @@ class Stacked_RealNVP(pt.nn.Module):
 
     def forward(self, x):
         Tx = x
-        log_det = 1
+        log_det = 0
         for mod in self.mods:
             Tx, log_det_t = mod.forward(Tx)
             log_det = log_det + log_det_t
@@ -182,7 +182,7 @@ class Stacked_RealNVP(pt.nn.Module):
     
     def inverse(self, z):
         Tz = z
-        log_det = 1
+        log_det = 0
         for mod in self.modules:
             Tz, log_det_t = mod.forward(Tz)
             log_det = log_det + log_det_t
@@ -272,6 +272,7 @@ class Maze_Model_NVP(Auxiliary_Feynman_Kac):
         super().__init__(device)
         self.pos_encoder = Position_Encoder(encoding_size)
         self.obs_encoder = Observation_Encoder(encoding_size)
+        self.const_fact = (encoding_size/2)*np.log(2*pt.pi)
         self.RealNVP = Stacked_RealNVP([RealNVP(encoding_size, 4, FCNN) for _ in range(2)])
         self.std_p = pt.nn.Parameter(pt.rand(1)*40)
         self.std_a = pt.nn.Parameter(pt.rand(1))
@@ -339,4 +340,4 @@ class Maze_Model_NVP(Auxiliary_Feynman_Kac):
         encoded_pos = self.pos_encoder(scaled_x_t)
         encoded_dif = encoded_obs.unsqueeze(1) - encoded_pos
         gaussian_dif, scaling = self.RealNVP.forward(encoded_dif)
-        return scaling - pt.sum(gaussian_dif**2)/2 - (encoded_obs.size(1)/2)*np.log(2*pt.pi)
+        return scaling - pt.sum(gaussian_dif**2, dim=2)/2 - self.const_fact
