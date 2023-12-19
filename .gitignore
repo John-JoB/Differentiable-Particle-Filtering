@@ -1,0 +1,4 @@
+#ignore documentation builder and pycache
+_docs/
+fk_filtering/__pycache__/
+
